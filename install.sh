@@ -233,11 +233,18 @@ build_projects() {
 
 # Integrate components
 integrate_components() {
-    # Copy SDK binary to Node Builder project
-    echo "Copying SDK binary to Node Builder project..."
+    # Create symlink for SDK binary to Node Builder project
+    echo "Creating symlink for SDK binary to Node Builder project..."
     mkdir -p "$NODE_BUILDER_INSTALL_DIR/build/bin"
-    cp "$SDK_INSTALL_DIR/neuron-sdk-websocket-wrapper" "$NODE_BUILDER_INSTALL_DIR/build/bin/"
-    echo "SDK binary copied to $NODE_BUILDER_INSTALL_DIR/build/bin/"
+    
+    # Remove existing file/symlink if it exists
+    if [ -f "$NODE_BUILDER_INSTALL_DIR/build/bin/neuron-sdk-websocket-wrapper" ] || [ -L "$NODE_BUILDER_INSTALL_DIR/build/bin/neuron-sdk-websocket-wrapper" ]; then
+        rm "$NODE_BUILDER_INSTALL_DIR/build/bin/neuron-sdk-websocket-wrapper"
+    fi
+    
+    # Create symlink for the binary
+    ln -s "$(pwd)/$SDK_INSTALL_DIR/neuron-sdk-websocket-wrapper" "$NODE_BUILDER_INSTALL_DIR/build/bin/neuron-sdk-websocket-wrapper"
+    echo "SDK binary symlink created: $NODE_BUILDER_INSTALL_DIR/build/bin/neuron-sdk-websocket-wrapper -> $SDK_INSTALL_DIR/neuron-sdk-websocket-wrapper"
     
     # Create symlink from Node Builder to Registration
     echo "Creating symlink for Registration..."

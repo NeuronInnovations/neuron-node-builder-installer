@@ -260,12 +260,36 @@ function Build-Projects {
 
 # Integrate components
 function Integrate-Components {
-    # Copy SDK binary to Node Builder project
-    Write-Host "Copying SDK binary to Node Builder project..."
+    # Create symlink for SDK binary to Node Builder project
+    Write-Host "Creating symlink for SDK binary to Node Builder project..."
     $buildBinPath = "$NODE_BUILDER_INSTALL_DIR\build\bin"
     New-Item -ItemType Directory -Path $buildBinPath -Force | Out-Null
-    Copy-Item "$SDK_INSTALL_DIR\neuron-sdk-websocket-wrapper.exe" $buildBinPath
-    Write-Host "SDK binary copied to $NODE_BUILDER_INSTALL_DIR\build\bin\"
+    
+    $sourcePath = "$(Get-Location)\$SDK_INSTALL_DIR\neuron-sdk-websocket-wrapper.exe"
+    $targetPath = "$buildBinPath\neuron-sdk-websocket-wrapper.exe"
+    
+    # Remove existing file/symlink if it exists
+    if (Test-Path $targetPath) {
+        Remove-Item -Path $targetPath -Force
+    }
+    
+    # Create symlink for the binary
+    try {
+        New-Item -ItemType SymbolicLink -Path $targetPath -Target $sourcePath -ErrorAction Stop | Out-Null
+        Write-Host "SDK binary symlink created: $targetPath -> $sourcePath"
+    }
+    catch {
+        Write-Host "Admin privileges required for symlink. Creating hardlink instead..."
+        try {
+            New-Item -ItemType HardLink -Path $targetPath -Target $sourcePath -ErrorAction Stop | Out-Null
+            Write-Host "SDK binary hardlink created: $targetPath -> $sourcePath"
+        }
+        catch {
+            Write-Host "Hardlink failed, falling back to copy..."
+            Copy-Item $sourcePath $targetPath
+            Write-Host "SDK binary copied to $buildBinPath (fallback)"
+        }
+    }
     
     # Create symlink from Node Builder to Registration
     Write-Host "Creating symlink for Registration..."

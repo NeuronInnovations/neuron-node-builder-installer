@@ -13,7 +13,7 @@ Cross-platform installation script for Neuron SDK components.
 
 ### Windows
 ```powershell
-iwr -useb https://raw.githubusercontent.com/your-org/your-repo/main/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/NeuronInnovations/neuron-node-builder-installer/main/install.ps1 | iex
 ```
 
 **Note**: If you get an execution policy error, use one of these alternatives:
@@ -22,12 +22,12 @@ iwr -useb https://raw.githubusercontent.com/your-org/your-repo/main/install.ps1 
 powershell -ExecutionPolicy Bypass -File install.ps1
 
 # Option 2: Run directly with bypass
-powershell -ExecutionPolicy Bypass -Command "iwr -useb https://raw.githubusercontent.com/your-org/your-repo/main/install.ps1 | iex"
+powershell -ExecutionPolicy Bypass -Command "iwr -useb https://raw.githubusercontent.com/NeuronInnovations/neuron-node-builder-installer/main/install.ps1 | iex"
 ```
 
 ### Linux & macOS
 ```bash
-curl -fsSL https://raw.githubusercontent.com/your-org/your-repo/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/NeuronInnovations/neuron-node-builder-installer/main/install.sh | bash
 ```
 
 ## Manual Install
