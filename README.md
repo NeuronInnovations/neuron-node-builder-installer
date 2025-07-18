@@ -27,7 +27,7 @@ powershell -ExecutionPolicy Bypass -Command "iwr -useb https://raw.githubusercon
 
 ### Linux & macOS
 ```bash
-curl -fsSL https://raw.githubusercontent.com/NeuronInnovations/neuron-node-builder-installer/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/NeuronInnovations/neuron-node-builder-installer/main/install.sh -o install.sh | chmod +x install.sh | ./install.sh
 ```
 
 ## Manual Install

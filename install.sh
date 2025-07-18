@@ -171,7 +171,7 @@ setup_config() {
         SDK_EXECUTABLE_PATH="$(pwd)/$NODE_BUILDER_INSTALL_DIR/build/bin/neuron-sdk-websocket-wrapper"
         if grep -q "NEURON_SDK_PATH=" "$NODE_BUILDER_INSTALL_DIR/.env"; then
             # Update existing NEURON_SDK_PATH
-            sed -i "s|NEURON_SDK_PATH=.*|NEURON_SDK_PATH=$SDK_EXECUTABLE_PATH|" "$NODE_BUILDER_INSTALL_DIR/.env"
+            sed -i.bak "s|NEURON_SDK_PATH=.*|NEURON_SDK_PATH=$SDK_EXECUTABLE_PATH|" "$NODE_BUILDER_INSTALL_DIR/.env" && rm "$NODE_BUILDER_INSTALL_DIR/.env.bak"
             echo "Updated NEURON_SDK_PATH in .env"
         else
             # Add NEURON_SDK_PATH if it doesn't exist
