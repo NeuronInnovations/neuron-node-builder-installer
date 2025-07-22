@@ -7,7 +7,7 @@ set -e  # Exit on any error
 # Confirmation prompt for direct execution
 echo "This script will install Neuron Node Builder components:"
 echo "- neuron-node-builder (Node.js)"
-echo "- neuron-registration (Node.js)"
+echo "- neuron-js-registration-sdk (Node.js)"
 echo "- neuron-sdk-websocket-wrapper (Go)"
 echo
 echo "Prerequisites will be checked:"
@@ -27,10 +27,10 @@ echo
 REQUIRED_NODE_VERSION="18"
 REQUIRED_GO_VERSION="1.23"
 NODE_BUILDER_REPO_URL="https://github.com/NeuronInnovations/neuron-node-builder.git"
-REGISTRATION_REPO_URL="https://github.com/NeuronInnovations/neuron-registration.git"
+REGISTRATION_REPO_URL="https://github.com/NeuronInnovations/neuron-js-registration-sdk.git"
 SDK_REPO_URL="https://github.com/NeuronInnovations/neuron-sdk-websocket-wrapper.git"
 NODE_BUILDER_INSTALL_DIR="neuron-node-builder"
-REGISTRATION_INSTALL_DIR="neuron-registration"
+REGISTRATION_INSTALL_DIR="neuron-js-registration-sdk"
 SDK_INSTALL_DIR="neuron-sdk-websocket-wrapper"
 
 # Check if command exists
@@ -122,7 +122,7 @@ clone_repositories() {
     echo "Node Builder repository cloned successfully"
     
     # Clone Registration repository
-    echo "Cloning neuron-registration repository..."
+    echo "Cloning neuron-js-registration-sdk repository..."
     
     if [ -d "$REGISTRATION_INSTALL_DIR" ]; then
         echo "Directory $REGISTRATION_INSTALL_DIR already exists!"
@@ -137,7 +137,7 @@ clone_repositories() {
     fi
     
     git clone "$REGISTRATION_REPO_URL" "$REGISTRATION_INSTALL_DIR"
-    echo "Registration repository cloned successfully"
+    echo "Registration SDK repository cloned successfully"
 
     # Clone SDK repository
     echo "Cloning neuron-sdk-websocket-wrapper repository..."
@@ -162,6 +162,15 @@ clone_repositories() {
 setup_config() {
     echo "Setting up configuration files..."
     
+    # Create .neuron-node-builder directory in user's home directory
+    NEURON_USER_PATH="$HOME/.neuron-node-builder"
+    if [ ! -d "$NEURON_USER_PATH" ]; then
+        mkdir -p "$NEURON_USER_PATH"
+        echo "Created user directory: $NEURON_USER_PATH"
+    else
+        echo "User directory already exists: $NEURON_USER_PATH"
+    fi
+    
     # Copy .env.example to .env for neuron-node-builder
     if [ -f "$NODE_BUILDER_INSTALL_DIR/.env.example" ]; then
         cp "$NODE_BUILDER_INSTALL_DIR/.env.example" "$NODE_BUILDER_INSTALL_DIR/.env"
@@ -177,6 +186,17 @@ setup_config() {
             # Add NEURON_SDK_PATH if it doesn't exist
             echo "NEURON_SDK_PATH=$SDK_EXECUTABLE_PATH" >> "$NODE_BUILDER_INSTALL_DIR/.env"
             echo "Added NEURON_SDK_PATH to .env"
+        fi
+        
+        # Update or add NEURON_USER_PATH in .env file
+        if grep -q "NEURON_USER_PATH=" "$NODE_BUILDER_INSTALL_DIR/.env"; then
+            # Update existing NEURON_USER_PATH
+            sed -i.bak "s|NEURON_USER_PATH=.*|NEURON_USER_PATH=$NEURON_USER_PATH|" "$NODE_BUILDER_INSTALL_DIR/.env" && rm "$NODE_BUILDER_INSTALL_DIR/.env.bak"
+            echo "Updated NEURON_USER_PATH in .env"
+        else
+            # Add NEURON_USER_PATH if it doesn't exist
+            echo "NEURON_USER_PATH=$NEURON_USER_PATH" >> "$NODE_BUILDER_INSTALL_DIR/.env"
+            echo "Added NEURON_USER_PATH to .env"
         fi
     else
         echo "Warning: .env.example not found in $NODE_BUILDER_INSTALL_DIR"
@@ -249,8 +269,8 @@ integrate_components() {
     # Create symlink from Node Builder to Registration
     echo "Creating symlink for Registration..."
     mkdir -p "$NODE_BUILDER_INSTALL_DIR/neuron/nodes"
-    ln -sf "$(pwd)/$REGISTRATION_INSTALL_DIR" "$NODE_BUILDER_INSTALL_DIR/neuron/nodes/neuron-registration"
-    echo "Symlink created: $NODE_BUILDER_INSTALL_DIR/neuron/nodes/neuron-registration -> $REGISTRATION_INSTALL_DIR"
+    ln -sf "$(pwd)/$REGISTRATION_INSTALL_DIR" "$NODE_BUILDER_INSTALL_DIR/neuron/nodes/neuron-js-registration-sdk"
+    echo "Symlink created: $NODE_BUILDER_INSTALL_DIR/neuron/nodes/neuron-js-registration-sdk -> $REGISTRATION_INSTALL_DIR"
 }
 
 # Main installation process

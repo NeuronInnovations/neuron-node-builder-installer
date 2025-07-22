@@ -65,11 +65,11 @@ chmod +x install.sh
 4. Clones three repositories:
    - neuron-node-builder (Node.js)
    - neuron-sdk-websocket-wrapper (Go)
-   - neuron-registration (Node.js)
+   - neuron-js-registration-sdk (Node.js)
 5. Installs dependencies for all projects
 6. Builds the Go binary
 7. Copies the binary to `neuron-node-builder/build/bin/`
-8. Creates a symlink from `neuron-node-builder/neuron/nodes/neuron-registration` to the `neuron-registration` directory
+8. Creates a symlink from `neuron-node-builder/neuron/nodes/neuron-js-registration-sdk` to the `neuron-js-registration-sdk` directory
 
 ## Troubleshooting
 

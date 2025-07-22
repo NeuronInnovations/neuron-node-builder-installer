@@ -9,7 +9,7 @@ param(
 if (-not $Force) {
     Write-Host "This script will install Neuron Node Builder components:"
     Write-Host "- neuron-node-builder (Node.js)"
-    Write-Host "- neuron-registration (Node.js)"
+    Write-Host "- neuron-js-registration-sdk (Node.js)"
     Write-Host "- neuron-sdk-websocket-wrapper (Go)"
     Write-Host ""
     Write-Host "Prerequisites will be checked:"
@@ -29,10 +29,10 @@ if (-not $Force) {
 $REQUIRED_NODE_VERSION = 18
 $REQUIRED_GO_VERSION = "1.23"
 $NODE_BUILDER_REPO_URL = "https://github.com/NeuronInnovations/neuron-node-builder.git"
-$REGISTRATION_REPO_URL = "https://github.com/NeuronInnovations/neuron-registration.git"
+$REGISTRATION_REPO_URL = "https://github.com/NeuronInnovations/neuron-js-registration-sdk.git"
 $SDK_REPO_URL = "https://github.com/NeuronInnovations/neuron-sdk-websocket-wrapper.git"
 $NODE_BUILDER_INSTALL_DIR = "neuron-node-builder"
-$REGISTRATION_INSTALL_DIR = "neuron-registration"
+$REGISTRATION_INSTALL_DIR = "neuron-js-registration-sdk"
 $SDK_INSTALL_DIR = "neuron-sdk-websocket-wrapper"
 
 # Check if command exists
@@ -134,7 +134,7 @@ function Install-Repositories {
     Write-Host "neuron-node-builder repository cloned successfully"
     
     # Clone Registration repository
-    Write-Host "Cloning neuron-registration repository..."
+    Write-Host "Cloning neuron-js-registration-sdk repository..."
     
     if (Test-Path $REGISTRATION_INSTALL_DIR) {
         Write-Host "Directory $REGISTRATION_INSTALL_DIR already exists!"
@@ -149,7 +149,7 @@ function Install-Repositories {
     }
     
     git clone $REGISTRATION_REPO_URL $REGISTRATION_INSTALL_DIR
-    Write-Host "neuron-registration repository cloned successfully"
+    Write-Host "neuron-js-registration-sdk repository cloned successfully"
     
     # Clone SDK repository
     Write-Host "Cloning neuron-sdk-websocket-wrapper repository..."
@@ -174,6 +174,15 @@ function Install-Repositories {
 function Set-Config {
     Write-Host "Setting up configuration files..."
     
+    # Create .neuron-node-builder directory in user's home directory
+    $neuronUserPath = "$env:USERPROFILE\.neuron-node-builder"
+    if (-not (Test-Path $neuronUserPath)) {
+        New-Item -ItemType Directory -Path $neuronUserPath -Force | Out-Null
+        Write-Host "Created user directory: $neuronUserPath"
+    } else {
+        Write-Host "User directory already exists: $neuronUserPath"
+    }
+    
     # Copy .env.example to .env for neuron-node-builder
     $envExamplePath = "$NODE_BUILDER_INSTALL_DIR\.env.example"
     $envPath = "$NODE_BUILDER_INSTALL_DIR\.env"
@@ -186,23 +195,38 @@ function Set-Config {
         $sdkExecutablePath = "$(Get-Location)\$NODE_BUILDER_INSTALL_DIR\build\bin\neuron-sdk-websocket-wrapper.exe"
         $envContent = Get-Content $envPath
         $neuronSdkPathFound = $false
+        $neuronUserPathFound = $false
         
         # Check if NEURON_SDK_PATH exists and update it
         for ($i = 0; $i -lt $envContent.Length; $i++) {
             if ($envContent[$i] -match "^NEURON_SDK_PATH=") {
                 $envContent[$i] = "NEURON_SDK_PATH=$sdkExecutablePath"
                 $neuronSdkPathFound = $true
-                break
+            }
+            elseif ($envContent[$i] -match "^NEURON_USER_PATH=") {
+                $envContent[$i] = "NEURON_USER_PATH=$neuronUserPath"
+                $neuronUserPathFound = $true
             }
         }
         
-        if ($neuronSdkPathFound) {
+        if ($neuronSdkPathFound -or $neuronUserPathFound) {
             $envContent | Set-Content $envPath
-            Write-Host "Updated NEURON_SDK_PATH in .env"
-        } else {
-            # Add NEURON_SDK_PATH if it doesn't exist
+            if ($neuronSdkPathFound) {
+                Write-Host "Updated NEURON_SDK_PATH in .env"
+            }
+            if ($neuronUserPathFound) {
+                Write-Host "Updated NEURON_USER_PATH in .env"
+            }
+        }
+        
+        # Add missing environment variables
+        if (-not $neuronSdkPathFound) {
             Add-Content $envPath "NEURON_SDK_PATH=$sdkExecutablePath"
             Write-Host "Added NEURON_SDK_PATH to .env"
+        }
+        if (-not $neuronUserPathFound) {
+            Add-Content $envPath "NEURON_USER_PATH=$neuronUserPath"
+            Write-Host "Added NEURON_USER_PATH to .env"
         }
     }
     else {
@@ -297,7 +321,7 @@ function Integrate-Components {
     New-Item -ItemType Directory -Path $nodesDir -Force | Out-Null
     
     $sourcePath = "$(Get-Location)\$REGISTRATION_INSTALL_DIR"
-    $targetPath = "$nodesDir\neuron-registration"
+    $targetPath = "$nodesDir\neuron-js-registration-sdk"
     
     # Remove existing symlink/directory if it exists
     if (Test-Path $targetPath) {
