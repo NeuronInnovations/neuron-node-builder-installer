@@ -284,8 +284,8 @@ integrate_components() {
     # Create symlink from Node Builder to Registration
     echo "Creating symlink for Registration..."
     mkdir -p "$NODE_BUILDER_INSTALL_DIR/neuron/nodes"
-    ln -sf "$(pwd)/$REGISTRATION_INSTALL_DIR" "$NODE_BUILDER_INSTALL_DIR/neuron/nodes/neuron-js-registration-sdk"
-    echo "Symlink created: $NODE_BUILDER_INSTALL_DIR/neuron/nodes/neuron-js-registration-sdk -> $REGISTRATION_INSTALL_DIR"
+    ln -sf "$(pwd)/$REGISTRATION_INSTALL_DIR" "$NODE_BUILDER_INSTALL_DIR/neuron/nodes/neuron-registration"
+    echo "Symlink created: $NODE_BUILDER_INSTALL_DIR/neuron/nodes/neuron-registration -> $REGISTRATION_INSTALL_DIR"
 }
 
 # Main installation process
