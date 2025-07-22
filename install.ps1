@@ -232,6 +232,21 @@ function Set-Config {
     else {
         Write-Host "Warning: .env.example not found in $NODE_BUILDER_INSTALL_DIR"
     }
+    
+    # Rename example.flows.json to flows.json if it exists
+    $exampleFlowsPath = "$NODE_BUILDER_INSTALL_DIR\neuron\userdir\example.flows.json"
+    $flowsPath = "$NODE_BUILDER_INSTALL_DIR\neuron\userdir\flows.json"
+    
+    if (Test-Path $exampleFlowsPath) {
+        if (Test-Path $flowsPath) {
+            Write-Host "flows.json already exists, skipping rename of example.flows.json"
+        } else {
+            Move-Item $exampleFlowsPath $flowsPath
+            Write-Host "Renamed example.flows.json to flows.json"
+        }
+    } else {
+        Write-Host "Warning: example.flows.json not found in neuron/userdir/"
+    }
 }
 
 # Install dependencies

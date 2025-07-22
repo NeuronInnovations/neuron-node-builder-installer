@@ -201,6 +201,21 @@ setup_config() {
     else
         echo "Warning: .env.example not found in $NODE_BUILDER_INSTALL_DIR"
     fi
+    
+    # Rename example.flows.json to flows.json if it exists
+    EXAMPLE_FLOWS_PATH="$NODE_BUILDER_INSTALL_DIR/neuron/userdir/example.flows.json"
+    FLOWS_PATH="$NODE_BUILDER_INSTALL_DIR/neuron/userdir/flows.json"
+    
+    if [ -f "$EXAMPLE_FLOWS_PATH" ]; then
+        if [ -f "$FLOWS_PATH" ]; then
+            echo "flows.json already exists, skipping rename of example.flows.json"
+        else
+            mv "$EXAMPLE_FLOWS_PATH" "$FLOWS_PATH"
+            echo "Renamed example.flows.json to flows.json"
+        fi
+    else
+        echo "Warning: example.flows.json not found in neuron/userdir/"
+    fi
 }
 
 # Install dependencies
@@ -269,7 +284,7 @@ integrate_components() {
     # Create symlink from Node Builder to Registration
     echo "Creating symlink for Registration..."
     mkdir -p "$NODE_BUILDER_INSTALL_DIR/neuron/nodes"
-    ln -sf "$(pwd)/$REGISTRATION_INSTALL_DIR" "$NODE_BUILDER_INSTALL_DIR/neuron/nodes/neuron-registration"
+    ln -sf "$(pwd)/$REGISTRATION_INSTALL_DIR" "$NODE_BUILDER_INSTALL_DIR/neuron/nodes/neuron-js-registration-sdk"
     echo "Symlink created: $NODE_BUILDER_INSTALL_DIR/neuron/nodes/neuron-js-registration-sdk -> $REGISTRATION_INSTALL_DIR"
 }
 
