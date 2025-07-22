@@ -1,9 +1,5 @@
 [
     {
-        "version": "4.0.11",
-        "isMandatory": false
-    },
-    {
         "version": "4.1.0",
         "isMandatory": true
     }
