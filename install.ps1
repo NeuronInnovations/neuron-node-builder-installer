@@ -1,39 +1,14 @@
-# Cross-platform install script for Neuron SDK components
-# PowerShell version for better Windows compatibility
+# Neuron Node Builder Installer
+# PowerShell version for Windows
 
 param(
     [switch]$Force
 )
 
-# Confirmation prompt for direct execution (skip if Force flag is used)
-if (-not $Force) {
-    Write-Host "This script will install Neuron Node Builder components:"
-    Write-Host "- neuron-node-builder (Node.js)"
-    Write-Host "- neuron-js-registration-sdk (Node.js)"
-    Write-Host "- neuron-sdk-websocket-wrapper (Go)"
-    Write-Host ""
-    Write-Host "Prerequisites will be checked:"
-    Write-Host "- Node.js 18+"
-    Write-Host "- Go 1.23+"
-    Write-Host "- npm and git"
-    Write-Host ""
-    $response = Read-Host "Continue with installation? (y/N)"
-    if ($response -ne "y" -and $response -ne "Y") {
-        Write-Host "Installation cancelled"
-        exit 0
-    }
-    Write-Host ""
-}
-
 # Configuration
 $REQUIRED_NODE_VERSION = 18
-$REQUIRED_GO_VERSION = "1.23"
-$NODE_BUILDER_REPO_URL = "https://github.com/NeuronInnovations/neuron-node-builder.git"
-$REGISTRATION_REPO_URL = "https://github.com/NeuronInnovations/neuron-js-registration-sdk.git"
-$SDK_REPO_URL = "https://github.com/NeuronInnovations/neuron-sdk-websocket-wrapper.git"
-$NODE_BUILDER_INSTALL_DIR = "neuron-node-builder"
-$REGISTRATION_INSTALL_DIR = "neuron-js-registration-sdk"
-$SDK_INSTALL_DIR = "neuron-sdk-websocket-wrapper"
+$INSTALL_JS_URL = "https://raw.githubusercontent.com/NeuronInnovations/neuron-node-builder-installer/refs/heads/main/install.js"
+$INSTALL_JS_FILE = "install.js"
 
 # Check if command exists
 function Test-Command {
@@ -85,303 +60,95 @@ function Test-NPM {
     Write-Host "npm check passed"
 }
 
-# Check Go installation and version
-function Test-Go {
-    Write-Host "Checking Go installation..."
+# Download install.js
+function Get-InstallScript {
+    Write-Host "Downloading install script..."
     
-    if (-not (Test-Command "go")) {
-        Write-Error "Go is not installed!"
-        Write-Host "Please install Go from: https://golang.org/dl/"
-        exit 1
-    }
-    
-    $goVersionOutput = go version
-    $goVersion = ($goVersionOutput -split " ")[2] -replace "go", ""
-    
-    Write-Host "Found Go version: $goVersion"
-    
-    # Simple version comparison
-    $currentVersion = [Version]$goVersion
-    $requiredVersion = [Version]$REQUIRED_GO_VERSION
-    
-    if ($currentVersion -lt $requiredVersion) {
-        Write-Error "Go version $REQUIRED_GO_VERSION or higher is required!"
-        Write-Error "Current version: $goVersion"
-        exit 1
-    }
-    
-    Write-Host "Go version check passed"
-}
-
-# Clone repositories
-function Install-Repositories {
-    # Clone Node Builder repository
-    Write-Host "Cloning neuron-node-builder repository..."
-    
-    if (Test-Path $NODE_BUILDER_INSTALL_DIR) {
-        Write-Host "Directory $NODE_BUILDER_INSTALL_DIR already exists!"
-        if (-not $Force) {
-            $response = Read-Host "Remove it and continue? (y/N)"
-            if ($response -ne "y" -and $response -ne "Y") {
-                Write-Host "Installation cancelled"
-                exit 1
-            }
-        }
-        Remove-Item -Recurse -Force $NODE_BUILDER_INSTALL_DIR
-    }
-    
-    git clone $NODE_BUILDER_REPO_URL $NODE_BUILDER_INSTALL_DIR
-    Write-Host "neuron-node-builder repository cloned successfully"
-    
-    # Clone Registration repository
-    Write-Host "Cloning neuron-js-registration-sdk repository..."
-    
-    if (Test-Path $REGISTRATION_INSTALL_DIR) {
-        Write-Host "Directory $REGISTRATION_INSTALL_DIR already exists!"
-        if (-not $Force) {
-            $response = Read-Host "Remove it and continue? (y/N)"
-            if ($response -ne "y" -and $response -ne "Y") {
-                Write-Host "Installation cancelled"
-                exit 1
-            }
-        }
-        Remove-Item -Recurse -Force $REGISTRATION_INSTALL_DIR
-    }
-    
-    git clone $REGISTRATION_REPO_URL $REGISTRATION_INSTALL_DIR
-    Write-Host "neuron-js-registration-sdk repository cloned successfully"
-    
-    # Clone SDK repository
-    Write-Host "Cloning neuron-sdk-websocket-wrapper repository..."
-    
-    if (Test-Path $SDK_INSTALL_DIR) {
-        Write-Host "Directory $SDK_INSTALL_DIR already exists!"
-        if (-not $Force) {
-            $response = Read-Host "Remove it and continue? (y/N)"
-            if ($response -ne "y" -and $response -ne "Y") {
-                Write-Host "Installation cancelled"
-                exit 1
-            }
-        }
-        Remove-Item -Recurse -Force $SDK_INSTALL_DIR
-    }
-    
-    git clone $SDK_REPO_URL $SDK_INSTALL_DIR
-    Write-Host "neuron-sdk-websocket-wrapper repository cloned successfully"
-}
-
-# Setup configuration files
-function Set-Config {
-    Write-Host "Setting up configuration files..."
-    
-    # Create .neuron-node-builder directory in user's home directory
-    $neuronUserPath = "$env:USERPROFILE\.neuron-node-builder"
-    if (-not (Test-Path $neuronUserPath)) {
-        New-Item -ItemType Directory -Path $neuronUserPath -Force | Out-Null
-        Write-Host "Created user directory: $neuronUserPath"
-    } else {
-        Write-Host "User directory already exists: $neuronUserPath"
-    }
-    
-    # Copy .env.example to .env for neuron-node-builder
-    $envExamplePath = "$NODE_BUILDER_INSTALL_DIR\.env.example"
-    $envPath = "$NODE_BUILDER_INSTALL_DIR\.env"
-    
-    if (Test-Path $envExamplePath) {
-        Copy-Item $envExamplePath $envPath
-        Write-Host "Copied .env.example to .env"
-        
-        # Update NEURON_SDK_PATH in .env file
-        $sdkExecutablePath = "$(Get-Location)\$NODE_BUILDER_INSTALL_DIR\build\bin\neuron-sdk-websocket-wrapper.exe"
-        $envContent = Get-Content $envPath
-        $neuronSdkPathFound = $false
-        $neuronUserPathFound = $false
-        
-        # Check if NEURON_SDK_PATH exists and update it
-        for ($i = 0; $i -lt $envContent.Length; $i++) {
-            if ($envContent[$i] -match "^NEURON_SDK_PATH=") {
-                $envContent[$i] = "NEURON_SDK_PATH=$sdkExecutablePath"
-                $neuronSdkPathFound = $true
-            }
-            elseif ($envContent[$i] -match "^NEURON_USER_PATH=") {
-                $envContent[$i] = "NEURON_USER_PATH=$neuronUserPath"
-                $neuronUserPathFound = $true
-            }
-        }
-        
-        if ($neuronSdkPathFound -or $neuronUserPathFound) {
-            $envContent | Set-Content $envPath
-            if ($neuronSdkPathFound) {
-                Write-Host "Updated NEURON_SDK_PATH in .env"
-            }
-            if ($neuronUserPathFound) {
-                Write-Host "Updated NEURON_USER_PATH in .env"
-            }
-        }
-        
-        # Add missing environment variables
-        if (-not $neuronSdkPathFound) {
-            Add-Content $envPath "NEURON_SDK_PATH=$sdkExecutablePath"
-            Write-Host "Added NEURON_SDK_PATH to .env"
-        }
-        if (-not $neuronUserPathFound) {
-            Add-Content $envPath "NEURON_USER_PATH=$neuronUserPath"
-            Write-Host "Added NEURON_USER_PATH to .env"
-        }
-    }
-    else {
-        Write-Host "Warning: .env.example not found in $NODE_BUILDER_INSTALL_DIR"
-    }
-    
-    # Rename example.flows.json to flows.json if it exists
-    $exampleFlowsPath = "$NODE_BUILDER_INSTALL_DIR\neuron\userdir\example.flows.json"
-    $flowsPath = "$NODE_BUILDER_INSTALL_DIR\neuron\userdir\flows.json"
-    
-    if (Test-Path $exampleFlowsPath) {
-        if (Test-Path $flowsPath) {
-            Write-Host "flows.json already exists, skipping rename of example.flows.json"
-        } else {
-            Move-Item $exampleFlowsPath $flowsPath
-            Write-Host "Renamed example.flows.json to flows.json"
-        }
-    } else {
-        Write-Host "Warning: example.flows.json not found in neuron/userdir/"
-    }
-}
-
-# Install dependencies
-function Install-Dependencies {
-    # Install Node Builder dependencies
-    Write-Host "Installing Node Builder dependencies..."
-    Push-Location $NODE_BUILDER_INSTALL_DIR
-    npm install
-    Pop-Location
-    Write-Host "Node Builder dependencies installed successfully"
-    
-    # Install Registration dependencies
-    Write-Host "Installing Registration dependencies..."
-    Push-Location $REGISTRATION_INSTALL_DIR
-    npm install
-    Pop-Location
-    Write-Host "Registration dependencies installed successfully"
-    
-    # Install SDK dependencies
-    Write-Host "Installing SDK dependencies..."
-    Push-Location $SDK_INSTALL_DIR
-    go mod tidy
-    Pop-Location
-    Write-Host "SDK dependencies installed successfully"
-}
-
-# Build projects
-function Build-Projects {
-    # Build Node Builder project
-    Write-Host "Building Node Builder project..."
-    Push-Location $NODE_BUILDER_INSTALL_DIR
-    npm run build
-    Pop-Location
-    Write-Host "Node Builder project built successfully"
-    
-    # Build Registration project
-    Write-Host "Building Registration project..."
-    Push-Location $REGISTRATION_INSTALL_DIR
-    npm run build
-    Pop-Location
-    Write-Host "Registration project built successfully"
-    
-    # Build SDK binary
-    Write-Host "Building SDK binary..."
-    Push-Location $SDK_INSTALL_DIR
-    go build -o neuron-sdk-websocket-wrapper.exe
-    Pop-Location
-    Write-Host "SDK binary built successfully"
-}
-
-# Integrate components
-function Integrate-Components {
-    # Create symlink for SDK binary to Node Builder project
-    Write-Host "Creating symlink for SDK binary to Node Builder project..."
-    $buildBinPath = "$NODE_BUILDER_INSTALL_DIR\build\bin"
-    New-Item -ItemType Directory -Path $buildBinPath -Force | Out-Null
-    
-    $sourcePath = "$(Get-Location)\$SDK_INSTALL_DIR\neuron-sdk-websocket-wrapper.exe"
-    $targetPath = "$buildBinPath\neuron-sdk-websocket-wrapper.exe"
-    
-    # Remove existing file/symlink if it exists
-    if (Test-Path $targetPath) {
-        Remove-Item -Path $targetPath -Force
-    }
-    
-    # Create symlink for the binary
     try {
-        New-Item -ItemType SymbolicLink -Path $targetPath -Target $sourcePath -ErrorAction Stop | Out-Null
-        Write-Host "SDK binary symlink created: $targetPath -> $sourcePath"
+        Invoke-WebRequest -Uri $INSTALL_JS_URL -OutFile $INSTALL_JS_FILE
+        Write-Host "Install script downloaded successfully"
     }
     catch {
-        Write-Host "Admin privileges required for symlink. Creating hardlink instead..."
+        Write-Error "Failed to download install script from $INSTALL_JS_URL"
+        Write-Error $_.Exception.Message
+        exit 1
+    }
+}
+
+# Run install.js
+function Start-Installation {
+    Write-Host "Running installation script..."
+    
+    try {
+        if ($Force) {
+            node $INSTALL_JS_FILE --force
+        } else {
+            node $INSTALL_JS_FILE
+        }
+    }
+    catch {
+        Write-Error "Installation script failed"
+        Write-Error $_.Exception.Message
+        exit 1
+    }
+}
+
+# Ask if user wants to start the application
+function Ask-StartApplication {
+    if ($Force) {
+        return $true
+    }
+    
+    Write-Host ""
+    $response = Read-Host "Would you like to start the Neuron Node Builder now? (y/N)"
+    return ($response -eq "y" -or $response -eq "Y")
+}
+
+# Start the application
+function Start-Application {
+    Write-Host "Starting Neuron Node Builder..."
+    
+    if (Test-Path "neuron-node-builder") {
+        Push-Location "neuron-node-builder"
         try {
-            New-Item -ItemType HardLink -Path $targetPath -Target $sourcePath -ErrorAction Stop | Out-Null
-            Write-Host "SDK binary hardlink created: $targetPath -> $sourcePath"
+            npm run start
         }
         catch {
-            Write-Host "Hardlink failed, falling back to copy..."
-            Copy-Item $sourcePath $targetPath
-            Write-Host "SDK binary copied to $buildBinPath (fallback)"
+            Write-Error "Failed to start application"
+            Write-Error $_.Exception.Message
         }
-    }
-    
-    # Create symlink from Node Builder to Registration
-    Write-Host "Creating symlink for Registration..."
-    $nodesDir = "$NODE_BUILDER_INSTALL_DIR\neuron\nodes"
-    New-Item -ItemType Directory -Path $nodesDir -Force | Out-Null
-    
-    $sourcePath = "$(Get-Location)\$REGISTRATION_INSTALL_DIR"
-    $targetPath = "$nodesDir\neuron-js-registration-sdk"
-    
-    # Remove existing symlink/directory if it exists
-    if (Test-Path $targetPath) {
-        Remove-Item -Path $targetPath -Force -Recurse
-    }
-    
-    # Create symlink (requires admin privileges on older Windows versions)
-    try {
-        New-Item -ItemType SymbolicLink -Path $targetPath -Target $sourcePath -ErrorAction Stop | Out-Null
-        Write-Host "Symlink created: $targetPath -> $sourcePath"
-    }
-    catch {
-        Write-Host "Admin privileges required for symlink. Creating junction instead..."
-        $junctionResult = cmd /c "mklink /J `"$targetPath`" `"$sourcePath`" 2>&1"
-        if ($LASTEXITCODE -eq 0) {
-            Write-Host "Junction created: $targetPath -> $sourcePath"
-        } else {
-            Write-Host "Error creating junction: $junctionResult"
-            Write-Host "Warning: Link creation failed. Registration may not work properly."
+        finally {
+            Pop-Location
         }
+    } else {
+        Write-Error "neuron-node-builder directory not found. Installation may have failed."
+        exit 1
     }
 }
 
 # Main installation process
 function Main {
-    Write-Host "Starting Neuron SDK installation..."
+    Write-Host "Neuron Node Builder Installer"
+    Write-Host "=============================="
+    Write-Host ""
     
     Test-NodeJS
     Test-NPM
-    Test-Go
-    Install-Repositories
-    Set-Config
-    Install-Dependencies
-    Build-Projects
-    Integrate-Components
+    Get-InstallScript
+    Start-Installation
     
-    Write-Host "Installation completed successfully!"
-    Write-Host "Repositories installed in:"
-    Write-Host "  Node Builder: $(Get-Location)\$NODE_BUILDER_INSTALL_DIR"
-    Write-Host "  Registration: $(Get-Location)\$REGISTRATION_INSTALL_DIR"
-    Write-Host "  SDK: $(Get-Location)\$SDK_INSTALL_DIR"
-    Write-Host ""
-    Write-Host "To start the application:"
-    Write-Host "  from the $NODE_BUILDER_INSTALL_DIR directory run:"
-    Write-Host "  npm run start"
+    # Clean up downloaded script
+    if (Test-Path $INSTALL_JS_FILE) {
+        Remove-Item $INSTALL_JS_FILE -Force
+    }
+    
+    # Ask if user wants to start the application
+    if (Ask-StartApplication) {
+        Start-Application
+    } else {
+        Write-Host ""
+        Write-Host "To start, cd into the 'neuron-node-builder' directory and run 'npm run start'"
+    }
 }
 
 # Run main function
