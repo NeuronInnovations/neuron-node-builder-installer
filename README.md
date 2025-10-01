@@ -59,17 +59,29 @@ chmod +x install.sh
 
 ## What it does
 
-1. Checks Node.js version (requires 18+)
-2. Verifies npm is installed
-3. Checks Go version (requires 1.23+)
-4. Clones three repositories:
-   - neuron-node-builder (Node.js)
-   - neuron-sdk-websocket-wrapper (Go)
-   - neuron-js-registration-sdk (Node.js)
-5. Installs dependencies for all projects
-6. Builds the Go binary
-7. Copies the binary to `neuron-node-builder/build/bin/`
-8. Creates a symlink from `neuron-node-builder/neuron/nodes/neuron-js-registration-sdk` to the `neuron-js-registration-sdk` directory
+This installer sets up a portable Neuron Node-RED environment by building its components from source on your machine. It performs the following steps:
+
+1.  **Checks Prerequisites:** Verifies that Node.js (v18+), npm, Go (v1.23+), and Git are installed on your system.
+2.  **Clones Repositories:** Downloads the source code for `neuron-node-builder` (a Node.js project) and optionally `neuron-sdk-websocket-wrapper` (a Go project) from their respective GitHub repositories.
+3.  **Installs Dependencies:** Installs the necessary project dependencies using `npm install` for Node.js projects and `go mod tidy` for Go projects.
+4.  **Builds Projects:** Compiles the `neuron-node-builder` using `npm run build` and, if selected, builds the Go SDK into an executable using `go build`.
+5.  **Integrates Components:** Configures the environment by setting up `.env` and `flows.json` files. If the Go SDK was built, it copies or symlinks its executable into the `neuron-node-builder/build/bin` directory, making it accessible to the Node-RED environment.
+
+The "one-click install" refers to the ease of running this installation script, and "portable" describes the resulting self-contained Node-RED environment.
+
+## Script Overview
+
+This installer utilizes three main scripts, each with a distinct role:
+
+*   **`install.js` (Node.js script):** This is the core logic of the installer. Written in JavaScript, it performs the main installation steps: checking Go version, cloning repositories, setting up configuration, installing dependencies, building projects, and integrating components. It's designed to be cross-platform.
+*   **`install.sh` (Bash script):** This is a shell wrapper specifically for macOS and Linux environments. Its primary role is to prepare the environment (e.g., checking Node.js/npm, downloading `install.js` if needed) and then execute `install.js`. It also handles starting the installed application.
+*   **`install.ps1` (PowerShell script):** This is a shell wrapper specifically for Windows environments. Similar to `install.sh`, it prepares the Windows environment, executes `install.js`, and handles post-installation application launch, but uses PowerShell commands.
+
+In essence, `install.js` contains the detailed installation instructions, while `install.sh` and `install.ps1` are platform-specific launchers that ensure `install.js` runs correctly on their respective operating systems.
+
+## Notes on Auto-Updates
+
+The `releases.json` file in this repository is consumed by the `neuron/services/NeuronUpdateService.js` component within the `neuron-node-builder` repository. This service uses the information in `releases.json` to determine when to trigger auto-updates for the Neuron Node-RED environment. For the auto-update mechanism to function correctly, `releases.json` must contain valid release information, including download URLs for different platforms and architectures.
 
 ## Troubleshooting
 
