@@ -79,6 +79,16 @@ This installer utilizes three main scripts, each with a distinct role:
 
 In essence, `install.js` contains the detailed installation instructions, while `install.sh` and `install.ps1` are platform-specific launchers that ensure `install.js` runs correctly on their respective operating systems.
 
+## Installer vs. Official Releases
+
+This installer is designed to set up a Neuron Node-RED environment by building its components directly from source on your local machine. This approach is particularly useful for:
+
+*   **Developers:** Who wish to contribute to the Neuron Node Builder or Neuron SDK, allowing for local development, customization, and debugging.
+*   **Specific Build Requirements:** Users who need to compile with particular flags, versions of dependencies, or in environments with restricted internet access.
+*   **Transparency:** Users who prefer to build software from source for verification and control.
+
+For official, pre-built, signed, and notarized releases of the Neuron Node Builder, please refer to the [Neuron Node Builder GitHub Releases page](https://github.com/NeuronInnovations/neuron-node-builder/releases). These official releases are generated via a comprehensive GitHub Actions workflow that handles packaging, code signing, and notarization for various platforms.
+
 ## Notes on Auto-Updates
 
 The `releases.json` file in this repository is consumed by the `neuron/services/NeuronUpdateService.js` component within the `neuron-node-builder` repository. This service uses the information in `releases.json` to determine when to trigger auto-updates for the Neuron Node-RED environment. For the auto-update mechanism to function correctly, `releases.json` must contain valid release information, including download URLs for different platforms and architectures.
